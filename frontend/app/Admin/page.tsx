@@ -8,6 +8,7 @@ import { AuthContext } from '@/context/auth-context';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import StorageCard from '@/components/StorageCard';
 
 
 // Register Chart.js components - including DoughnutController
@@ -596,6 +597,7 @@ const DentalDashboard: React.FC = () => {
               </Card>
             );
           })}
+          <StorageCard/>
         </div>
 
         {/* Main Analytics Section */}
