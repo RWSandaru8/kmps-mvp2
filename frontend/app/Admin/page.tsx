@@ -648,7 +648,7 @@ const DentalDashboard: React.FC = () => {
                   </button>
                 </div>
               </div>
-              <div className="h-60 sm:h-72 md:h-80 mb-4 sm:mb-6 flex items-center justify-center">
+              <div className="mt-6 h-60 sm:h-72 md:h-80 mb-4 sm:mb-6 flex items-center justify-center">
                 {loadingAppointmentCounts ? (
                   <div className="text-sm sm:text-base text-gray-500">Loading chart...</div>
                 ) : (
@@ -656,13 +656,14 @@ const DentalDashboard: React.FC = () => {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 xs:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
+             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {appointmentStatus.map((status, index) => (
-                  <div key={index} className="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-3 bg-gray-50 rounded-lg">
+                  <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                     <div
-                      className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full flex-shrink-0"
+                      className="w-3 h-3 rounded-full"
                       style={{ backgroundColor: status.color }}
                     />
+                    
                     <div className="min-w-0">
                       <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">
                         {status.name}
