@@ -577,21 +577,23 @@ router.post('/', async (req, res) => {
 router.put('/:appointment_id', /* authenticateToken, */ async (req, res) => {
   try {
     const data = req.body;
+    console.log(data.status);
     if (data.date) data.date = new Date(data.date);
     const updated = await prisma.appointments.update({
       where: { appointment_id: Number(req.params.appointment_id) },
       data,
     });
-    const appointment = await prisma.appointments.findUnique({where:{appointment_id:req.params.appointment_id}});
-    const patient = await prisma.patients.findUnique({where:{email:appointment.patient_id}});
-    if(data.staus == "cancelled"){
-      sendAppointmentCancelation(patient.email,appointment.date, appointment.time_from);
+    const appointment = await prisma.appointments.findUnique({where:{appointment_id:Number(req.params.appointment_id)}});
+    const patient = await prisma.patients.findUnique({where:{patient_id:appointment.patient_id}});
+    if(data.status == "cancelled"){
+      sendAppointmentCancelation(patient.email,appointment.date,appointment.time_from);
     }
     else if(data.status == "confirmed"){
       sendAppointmentConfirmation(patient.email,appointment.date,appointment.time_from);
     }
     res.status(202).json(updated);
-  } catch {
+  } catch(err) {
+    console.log(err);
     res.status(500).json({ error: 'Failed to update appointment' });
   }
 });
