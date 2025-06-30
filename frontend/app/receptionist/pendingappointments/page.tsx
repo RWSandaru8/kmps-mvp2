@@ -3,8 +3,8 @@
 import { useState, useEffect, useContext } from 'react'
 import { useRouter } from 'next/navigation'
 import { Input } from '@/components/ui/input'
-import { Button } from '@/Components/ui/button'
-import { Card, CardContent } from '@/Components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 import { Search, Phone, Mail, Calendar, Clock, User } from 'lucide-react'
 import { AuthContext } from '@/context/auth-context'
 import axios from 'axios';

@@ -18,7 +18,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarFooter,
-} from "@/Components/ui/sidebar";
+} from "@/components/ui/sidebar";
 
 import Image from "next/image";
 import {
@@ -29,7 +29,7 @@ import {
   UserCheck,
   Calendar,
 } from "lucide-react";
-import { Button } from "@/Components/ui/button";
+import { Button } from "@/components/ui/button";
 import axios from "axios";
 
 const items = [
