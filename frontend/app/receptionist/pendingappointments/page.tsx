@@ -96,7 +96,7 @@ export default function AppointmentsPage() {
   useEffect(() => {
     if (isLoadingAuth) return;
     if (!isLoggedIn) {
-      tost.error("You are not logged in");
+      toast.error("You are not logged in");
       router.push("/");
       return;
     }
