@@ -151,9 +151,42 @@ export function RoomAssignment() {
     setFilteredAssignments(filtered)
   }, [assignments, searchTerm, selectedDate, viewFilter])
 
+  // Check for overlapping time slots
+  const hasTimeSlotOverlap = (roomId: string, date: string, timeFrom: string, timeTo: string, excludeAssignmentId?: string) => {
+    const newStart = new Date(`${date}T${timeFrom}`).getTime()
+    const newEnd = new Date(`${date}T${timeTo}`).getTime()
+    
+    return assignments.some(assignment => {
+      // Skip the assignment we're editing (if any)
+      if (excludeAssignmentId && assignment.id === excludeAssignmentId) return false
+      
+      // Only check for the same room and date
+      if (assignment.room_id === roomId && assignment.date === date) {
+        const existingStart = new Date(`${assignment.date}T${assignment.time_from}`).getTime()
+        const existingEnd = new Date(`${assignment.date}T${assignment.time_to}`).getTime()
+        
+        // Check for overlap
+        return newStart < existingEnd && newEnd > existingStart
+      }
+      return false
+    })
+  }
+
   const handleAddAssignment = async () => {
     if (!selectedRoomId || !formData.dentist_id || !formData.date || !formData.time_from || !formData.time_to) {
       toast.error("Please fill all required fields")
+      return
+    }
+    
+    // Validate time range
+    if (formData.time_from >= formData.time_to) {
+      toast.error("End time must be after start time")
+      return
+    }
+    
+    // Check for overlapping time slots
+    if (hasTimeSlotOverlap(selectedRoomId, formData.date, formData.time_from, formData.time_to)) {
+      toast.error("This room is already booked for the selected time slot")
       return
     }
 
@@ -184,6 +217,18 @@ export function RoomAssignment() {
   const handleEditAssignment = async () => {
     if (!editingAssignment || !formData.dentist_id || !formData.date || !formData.time_from || !formData.time_to) {
       toast.error("Please fill all required fields")
+      return
+    }
+    
+    // Validate time range
+    if (formData.time_from >= formData.time_to) {
+      toast.error("End time must be after start time")
+      return
+    }
+    
+    // Check for overlapping time slots, excluding the current assignment being edited
+    if (hasTimeSlotOverlap(editingAssignment.room_id, formData.date, formData.time_from, formData.time_to, editingAssignment.id)) {
+      toast.error("This room is already booked for the selected time slot")
       return
     }
 
