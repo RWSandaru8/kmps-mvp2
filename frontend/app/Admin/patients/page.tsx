@@ -317,20 +317,20 @@ const PatientManagement = () => {
         {/* Desktop Table View */}
         <div className="hidden lg:block bg-white rounded-lg shadow overflow-hidden">
           <div className="bg-green-50 px-6 py-3 border-b border-green-200">
-            <div className="grid grid-cols-6 gap-4 text-sm font-medium text-gray-700">
-              <div>Profile</div>
-              <div>Patient ID</div>
-              <div>Name</div>
-              <div>Address</div>
-              <div>Email</div>
-              <div>Action</div>
+            <div className="grid grid-cols-[80px_100px_minmax(140px,1fr)_minmax(160px,1fr)_minmax(220px,1fr)_100px] gap-4 text-sm font-medium text-gray-700">
+              <div className="flex items-center justify-center">Profile</div>
+              <div className="flex items-center">Patient ID</div>
+              <div className="flex items-center">Name</div>
+              <div className="flex items-center">Address</div>
+              <div className="flex items-center">Email</div>
+              <div className="flex items-center justify-end pr-4">Action</div>
             </div>
           </div>
 
           <div className="divide-y divide-gray-200">
             {filteredPatients.map((patient) => (
               <div key={patient.patient_id} className="px-6 py-4 hover:bg-gray-50">
-                <div className="grid grid-cols-6 gap-4 items-center">
+                <div className="grid grid-cols-[80px_100px_minmax(140px,1fr)_minmax(160px,1fr)_minmax(220px,1fr)_100px] gap-4 items-center">
                   <div className="flex items-center justify-center">
                     <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center text-gray-700 font-medium">
                       {patient.profile_picture ? (
@@ -347,8 +347,8 @@ const PatientManagement = () => {
                   <div className="text-sm text-gray-900">{patient.patient_id}</div>
                   <div className="text-sm text-gray-900">{patient.name}</div>
                   <div className="text-sm text-gray-600">{patient.address}</div>
-                  <div className="text-sm text-gray-600">{patient.email}</div>
-                  <div className="flex items-center gap-2">
+                  <div className="text-sm text-gray-600 truncate pr-2" title={patient.email}>{patient.email}</div>
+                  <div className="flex items-center justify-end gap-2 pr-4">
                     <Button
                       variant="ghost"
                       size="sm"

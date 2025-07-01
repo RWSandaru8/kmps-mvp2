@@ -47,10 +47,12 @@ const DentalDashboard = () => {
   const [changingStatus, setChangingStatus] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-  const [todaysAppointments, setTodaysAppointments] = useState <Appointment[]>([]);
+  const [todaysAppointments, setTodaysAppointments] = useState<Appointment[]>([]);
+  const [selectedDateAppointments, setSelectedDateAppointments] = useState<Appointment[]>([]);
   const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([]);
   const [status, setStatus] = useState("");
   const [appointment_id, setAppointment_id] = useState(0);
+  const [isShowingSelectedDate, setIsShowingSelectedDate] = useState(false);
 
   const router = useRouter();
 
@@ -64,46 +66,129 @@ const DentalDashboard = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  const fetchAppointmentsForDate = async (date: Date) => {
+    try {
+      // First, fetch all appointments for the dentist
+      const response = await axios.get(
+        `${backendURL}/appointments/fordentist/${user.id}`
+      );
+      
+      if (response.status === 200) {
+        // Format the target date to YYYY-MM-DD for comparison
+        const targetDate = new Date(date);
+        targetDate.setHours(0, 0, 0, 0);
+        const targetDateStr = targetDate.toISOString().split('T')[0];
+        
+        console.log('Fetching appointments for date:', targetDateStr);
+        
+        // Filter appointments by the selected date on the frontend
+        const filteredAppointments = response.data.filter((appointment: Appointment) => {
+          if (!appointment.date || !appointment.patient) return false;
+          
+          // Parse appointment date and normalize to start of day for comparison
+          const appointmentDate = new Date(appointment.date);
+          appointmentDate.setHours(0, 0, 0, 0);
+          const appointmentDateStr = appointmentDate.toISOString().split('T')[0];
+          
+          const isMatch = appointmentDateStr === targetDateStr;
+          if (isMatch) {
+            console.log('Matching appointment:', {
+              id: appointment.appointment_id,
+              date: appointment.date,
+              status: appointment.status,
+              patient: appointment.patient?.name
+            });
+          }
+          
+          return isMatch;
+        });
+        
+        console.log(`Found ${filteredAppointments.length} appointments for ${targetDateStr}`);
+        return filteredAppointments;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+      toast.error('Failed to fetch appointments');
+      return [];
+    }
+  };
+
   const fetchTodaysAppointments = async () => {
     setLoadingTodaysAppointments(true);
-    try{
-      const response = await axios.get(
-        `${backendURL}/appointments/today/fordentist/${user.id}`
-      );
-      if(response.status == 500){
-        throw new Error("Internal Server Error");
-      }
-      const validAppointments = response.data.filter(
-        (appointment: Appointment) => appointment.patient !== null
-      );
-      setTodaysAppointments(validAppointments);
-    }
-    catch(err: any){
+    try {
+      const today = new Date();
+      const appointments = await fetchAppointmentsForDate(today);
+      setTodaysAppointments(appointments);
+      setIsShowingSelectedDate(false);
+    } catch (err: any) {
       toast.error(err.message);
-    }
-    finally{
+    } finally {
       setLoadingTodaysAppointments(false);
     }
   };
 
   const fetchUpcomingAppointments = async () => {
     setLoadingUpcomingAppointments(true);
-    try{
+    try {
+      // First, fetch all future appointments for the dentist
       const response = await axios.get(
-        `${backendURL}/appointments/fordentist/upcoming/${user.id}`
+        `${backendURL}/appointments/fordentist/${user.id}`
       );
-      if(response.status == 500){
-        throw new Error("Internal Server Error");
+      
+      if (response.status === 200) {
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        
+        // Filter for future appointments (excluding today) with valid patients
+        const upcoming = response.data.filter((appointment: Appointment) => {
+          if (!appointment.date || !appointment.patient) return false;
+          
+          // Parse appointment date and normalize to start of day
+          const appointmentDate = new Date(appointment.date);
+          appointmentDate.setHours(0, 0, 0, 0);
+          
+          // Only include future dates (not today)
+          const isFuture = appointmentDate > now;
+          
+          if (isFuture) {
+            console.log('Future appointment:', {
+              id: appointment.appointment_id,
+              date: appointment.date,
+              status: appointment.status,
+              patient: appointment.patient?.name
+            });
+          }
+          
+          return isFuture;
+        });
+        
+        // Sort by date and time in ascending order (earliest first)
+        upcoming.sort((a: Appointment, b: Appointment) => {
+          // Create full datetime strings for accurate comparison
+          const dateTimeA = new Date(`${a.date}T${a.time_from}`).getTime();
+          const dateTimeB = new Date(`${b.date}T${b.time_from}`).getTime();
+          
+          // For same date, sort by time
+          if (a.date === b.date) {
+            return dateTimeA - dateTimeB;
+          }
+          
+          // Sort by date
+          const dateA = new Date(a.date).getTime();
+          const dateB = new Date(b.date).getTime();
+          return dateA - dateB;
+        });
+        
+        console.log(`Found ${upcoming.length} future appointments`);
+        setUpcomingAppointments(upcoming);
+      } else {
+        throw new Error('Failed to fetch upcoming appointments');
       }
-      const validAppointments = response.data.filter(
-        (appointment: Appointment) => appointment.patient !== null
-      );
-      setUpcomingAppointments(validAppointments);
-    }
-    catch(err: any){
-      toast.error(err.message);
-    }
-    finally{
+    } catch (err: any) {
+      console.error('Error fetching upcoming appointments:', err);
+      toast.error(err.message || 'Failed to fetch upcoming appointments');
+    } finally {
       setLoadingUpcomingAppointments(false);
     }
   };
@@ -135,6 +220,14 @@ const DentalDashboard = () => {
       setStatus('');
     }
   }
+
+  const isDateSelected = (day: number) => {
+    return (
+      day === selectedDate.getDate() &&
+      currentDate.getMonth() === selectedDate.getMonth() &&
+      currentDate.getFullYear() === selectedDate.getFullYear()
+    );
+  };
 
   const getDaysInMonth = (date: any) => {
     const year = date.getFullYear();
@@ -202,6 +295,17 @@ const DentalDashboard = () => {
         )
       );
 
+      // Also update in selected date appointments if showing
+      if (isShowingSelectedDate) {
+        setSelectedDateAppointments(prevAppointments =>
+          prevAppointments.map(appointment =>
+            appointment.appointment_id === appointmentId
+              ? { ...appointment, status: newStatus }
+              : appointment
+          )
+        );
+      }
+
       // If cancelling, send the note to the server
       if (newStatus === 'cancelled') {
         await axios.put(
@@ -229,6 +333,35 @@ const DentalDashboard = () => {
             : appointment
         )
       );
+    }
+  };
+
+  const handleDateClick = async (day: number) => {
+    const selected = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    setSelectedDate(selected);
+    
+    // Check if it's today
+    const today = new Date();
+    if (
+      selected.getDate() === today.getDate() &&
+      selected.getMonth() === today.getMonth() &&
+      selected.getFullYear() === today.getFullYear()
+    ) {
+      setIsShowingSelectedDate(false);
+      fetchTodaysAppointments();
+      return;
+    }
+
+    setIsShowingSelectedDate(true);
+    setLoadingTodaysAppointments(true);
+    try {
+      const appointments = await fetchAppointmentsForDate(selected);
+      setSelectedDateAppointments(appointments);
+    } catch (error) {
+      console.error('Error fetching appointments for selected date:', error);
+      toast.error('Failed to fetch appointments for selected date');
+    } finally {
+      setLoadingTodaysAppointments(false);
     }
   };
 
@@ -275,7 +408,9 @@ const DentalDashboard = () => {
   };
 
   const todaysAppointmentsCount = todaysAppointments.filter(apt => apt.status !== 'cancelled').length;
-  const totalCheckIns = todaysAppointments.filter(apt => apt.status === 'checkedin').length;
+  const todaysCheckIns = todaysAppointments.filter(apt => apt.status === 'checkedin').length;
+  const selectedDateCheckIns = selectedDateAppointments.filter(apt => apt.status === 'checkedin').length;
+  const totalCheckIns = isShowingSelectedDate ? selectedDateCheckIns : todaysCheckIns;
   const completedAppointments = todaysAppointments.filter(apt => apt.status === 'complete').length;
 
   const monthNames = ["January", "February", "March", "April", "May", "June",
@@ -322,14 +457,20 @@ const DentalDashboard = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 gap-4 md:gap-6 mb-6">
-        
-
         <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg p-4 md:p-6 text-white">
           <div className="flex items-center">
             <Calendar className="w-8 h-8 mr-3" />
             <div>
-              <p className="text-purple-100 text-sm">Today's Appointments</p>
-              <p className="text-2xl md:text-3xl font-bold">{todaysAppointmentsCount}</p>
+              <p className="text-purple-100 text-sm">
+                {isShowingSelectedDate 
+                  ? `Appointments on ${selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                  : "Today's Appointments"}
+              </p>
+              <p className="text-2xl md:text-3xl font-bold">
+                {isShowingSelectedDate 
+                  ? selectedDateAppointments.filter(apt => apt.status.toLowerCase() !== 'cancelled').length 
+                  : todaysAppointmentsCount}
+              </p>
             </div>
           </div>
         </div>
@@ -338,7 +479,11 @@ const DentalDashboard = () => {
           <div className="flex items-center">
             <CheckCircle className="w-8 h-8 mr-3" />
             <div>
-              <p className="text-green-100 text-sm">Total Check-ins</p>
+              <p className="text-green-100 text-sm">
+                {isShowingSelectedDate 
+                  ? `Check-ins on ${selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                  : "Today's Check-ins"}
+              </p>
               <p className="text-2xl md:text-3xl font-bold">{totalCheckIns}</p>
               
             </div>
@@ -366,7 +511,12 @@ const DentalDashboard = () => {
 
         <div className="flex-1 overflow-y-auto px-4 md:px-6 pb-4 md:pb-6">
           <div className="space-y-3">
-            {todaysAppointments.map((appointment) => (
+            {isShowingSelectedDate && selectedDateAppointments.length === 0 && !loadingTodaysAppointments && (
+              <div className="text-center py-8 text-gray-500">
+                No appointments scheduled for this date
+              </div>
+            )}
+            {(isShowingSelectedDate ? selectedDateAppointments : todaysAppointments).map((appointment) => (
               <div key={appointment.appointment_id} className="flex items-center p-3 md:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                 <img
                   src={appointment.patient?.profile_picture || ''} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = ''; }}
@@ -469,12 +619,15 @@ const DentalDashboard = () => {
                         className={`w-full h-full flex items-center justify-center text-sm rounded hover:bg-gray-100 '
                             ${
                               day === new Date().getDate() &&
-                                currentDate.getMonth() === new Date().getMonth() &&
-                                currentDate.getFullYear() === new Date().getFullYear()
-                                ? 'bg-emerald-100 text-emerald-800' : 'text-emrald-700'
-                          
-                        }
+                              currentDate.getMonth() === new Date().getMonth() &&
+                              currentDate.getFullYear() === new Date().getFullYear()
+                                ? 'bg-emerald-100 text-emerald-800' 
+                                : isDateSelected(day as number)
+                                ? 'bg-blue-100 text-blue-800 font-medium'
+                                : 'text-gray-700'
+                            }
                           `}
+                        onClick={() => handleDateClick(day as number)}
                       >
                         {day}
                       </button>
@@ -491,7 +644,7 @@ const DentalDashboard = () => {
           <div className="bg-white rounded-lg shadow-sm border h-80 flex flex-col">
             <div className="p-4 md:p-6 flex-shrink-0">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Upcoming Schedule</h2>
+                <h2 className="text-lg font-semibold text-gray-900">Future Appointments</h2>
                 
               </div>
             </div>
