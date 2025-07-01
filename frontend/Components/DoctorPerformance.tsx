@@ -164,12 +164,15 @@ export default function DoctorPerformanceDashboard({ user, onClose }: Props) {
   
   // Update appointment counts based on filtered appointments
   const updateAppointmentCounts = (appointments: any[]) => {
+    // Filter out cancelled appointments for the total count
+    const nonCancelledAppointments = appointments.filter(a => a.status !== 'cancelled');
+    
     const counts = {
-      total: appointments.length,
-      completed: appointments.filter(a => a.status === 'completed').length,
-      confirmed: appointments.filter(a => a.status === 'confirmed').length,
-      pending: appointments.filter(a => a.status === 'pending').length,
-      canceled: appointments.filter(a => a.status === 'canceled').length
+      total: nonCancelledAppointments.length,
+      completed: nonCancelledAppointments.filter(a => a.status === 'completed').length,
+      confirmed: nonCancelledAppointments.filter(a => a.status === 'confirmed').length,
+      pending: nonCancelledAppointments.filter(a => a.status === 'pending').length,
+      canceled: appointments.filter(a => a.status === 'canceled' || a.status === 'cancelled').length
     };
     
     setAppointmentCounts(counts);

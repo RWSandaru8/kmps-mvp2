@@ -300,7 +300,7 @@ const DentalDashboard = () => {
                   <div className="flex items-center justify-between w-full">
                     <div className="flex items-center space-x-3">
                       <h3 className="font-medium text-gray-900 truncate">{appointment.patient?.name || "deleted patient"}</h3>
-                      {!['Completed', 'Cancelled'].includes(appointment.status) && (
+                      {!['completed', 'cancelled'].includes(appointment.status) && (
                         <div className="flex space-x-2">
                           <button
                             onClick={(e) => {
@@ -315,10 +315,10 @@ const DentalDashboard = () => {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleStatusChange(appointment.appointment_id, 'Cancelled');
+                              handleStatusChange(appointment.appointment_id, 'cancelled');
                             }}
                             className="p-1.5 rounded-full bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
-                            title="Mark as Cancelled"
+                            title="Mark as cancelled"
                           >
                             <X className="w-3.5 h-3.5" />
                           </button>

@@ -84,7 +84,7 @@ const sendAppointmentConfirmation = async (email, date, start_time) => {
     }
 };
 
-const sendAppointmentCancelation = async (email, date, start_time, provider) => {
+const sendAppointmentCancelation = async (email, date, start_time, provider, cancelNote) => {
     const mailOptions = {
       from: `"Kinross Dental Clinic" <${process.env.EMAIL_USER}>`,
       to: email,
@@ -100,9 +100,14 @@ const sendAppointmentCancelation = async (email, date, start_time, provider) => 
               <td style="padding: 8px 0;">${date}</td>
             </tr>
             <tr>
-              <td style="padding: 8px 0;"><strong>Time:</strong></td>
+              <td style="padding: 8px 0; vertical-align: top;"><strong>Time:</strong></td>
               <td style="padding: 8px 0;">${start_time}</td>
             </tr>
+            ${cancelNote ? `
+            <tr>
+              <td style="padding: 8px 0; vertical-align: top;"><strong>Reason for Cancellation:</strong></td>
+              <td style="padding: 8px 0;">${cancelNote}</td>
+            </tr>` : ''}
           </table>
           <p style="margin-top: 20px;">You can reschedule another appointment with ${provider} at your convenience. If you have any questions, feel free to contact us.</p>
           <p>Best regards,<br><strong>Kinross Dental Clinic Team</strong></p>
