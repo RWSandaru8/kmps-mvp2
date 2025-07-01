@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useContext } from 'react';
-import { Calendar, DollarSign, MessageSquare, Clock, Edit2, X, Check, User, CreditCard, NotebookPen } from 'lucide-react';
+import { Calendar, DollarSign, MessageSquare, Clock, Edit2, X, Check, User, CreditCard, NotebookPen, Currency } from 'lucide-react';
 import axios from 'axios';
 import { AuthContext } from '@/context/auth-context';
 import { toast } from 'sonner';
@@ -258,7 +258,7 @@ const HealthcareDashboard: React.FC = () => {
 
   // Calculate stats
   const newMessagesCount = messages.filter(msg => !msg.is_read).length;
-  const upcomingCount = upcomingAppointments.length;
+  const upcomingCount = upcomingAppointments.filter(appt => appt.status?.toLowerCase() !== 'cancelled').length;
 
   // Stats cards data
   const statsCards = [
@@ -502,7 +502,7 @@ const HealthcareDashboard: React.FC = () => {
                           </p>
                           {appointment.fee && (
                             <p className="text-sm text-gray-500 whitespace-nowrap flex items-center gap-1">
-                              <DollarSign className="h-4 w-4 text-yellow-500" />
+                              
                               Rs. {appointment.fee}
                             </p>
                           )}

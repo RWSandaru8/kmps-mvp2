@@ -944,7 +944,9 @@ const MedicalStudyInterface: React.FC = () => {
                           {study.study_id}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{study.date}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900">
+                        {new Date(study.date).toLocaleDateString('en-CA')}
+                      </td>
                       <td className="px-4 py-3 text-sm text-gray-900">{study.time}</td>
                       <td className="px-4 py-3 text-sm text-gray-900">{study.modality}</td>
                       <td className="px-4 py-3 text-sm text-gray-900">{study.description || 'No description'}</td>

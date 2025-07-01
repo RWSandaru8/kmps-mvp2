@@ -786,10 +786,34 @@ export default function DentistSchedulePage({ params }: DentistScheduleProps) {
             appointmentList.map((appointment) => (
               <tr key={appointment.appointment_id} className="border-b">
                 <td className="p-2">
-                  <div>
-                    <div className="font-medium">{appointment.patient?.name || 'Unknown Patient'}</div>
-                    <div className="text-sm text-gray-600 sm:hidden">
-                      {appointment.note}
+                  <div className="flex items-center space-x-3">
+                    <div className="relative h-8 w-8 rounded-full overflow-hidden bg-blue-100 flex-shrink-0">
+                      {appointment.patient?.profile_picture ? (
+                        <img
+                          src={`${process.env.NEXT_PUBLIC_BACKEND_URL}${appointment.patient.profile_picture}`}
+                          alt={appointment.patient?.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const fallback = target.nextElementSibling as HTMLElement;
+                            if (fallback) {
+                              fallback.style.display = 'flex';
+                            }
+                          }}
+                        />
+                      ) : null}
+                      <div className="absolute inset-0 flex items-center justify-center bg-blue-100 text-blue-700 font-medium text-sm">
+                        {appointment.patient?.name 
+                          ? appointment.patient.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
+                          : '?'}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-medium">{appointment.patient?.name || 'Unknown Patient'}</div>
+                      <div className="text-sm text-gray-600 sm:hidden">
+                        {appointment.note}
+                      </div>
                     </div>
                   </div>
                 </td>

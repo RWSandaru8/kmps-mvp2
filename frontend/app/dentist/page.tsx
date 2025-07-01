@@ -518,11 +518,28 @@ const DentalDashboard = () => {
             )}
             {(isShowingSelectedDate ? selectedDateAppointments : todaysAppointments).map((appointment) => (
               <div key={appointment.appointment_id} className="flex items-center p-3 md:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                <img
-                  src={appointment.patient?.profile_picture || ''} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = ''; }}
-                  alt={appointment.patient?.name}
-                  className="w-10 h-10 md:w-12 md:h-12 rounded-full mr-3 md:mr-4"
-                />
+                <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden bg-blue-100 flex-shrink-0 mr-3 md:mr-4">
+                  {appointment.patient?.profile_picture ? (
+                    <img
+                      src={`${process.env.NEXT_PUBLIC_BACKEND_URL}${appointment.patient.profile_picture}`}
+                      alt={appointment.patient?.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const fallback = target.nextElementSibling as HTMLElement;
+                        if (fallback) {
+                          fallback.style.display = 'flex';
+                        }
+                      }}
+                    />
+                  ) : null}
+                  <div className="absolute inset-0 flex items-center justify-center bg-blue-100 text-blue-700 font-medium text-sm">
+                    {appointment.patient?.name 
+                      ? appointment.patient.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
+                      : '?'}
+                  </div>
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between w-full">
                     <div className="flex items-center space-x-3">
@@ -653,11 +670,28 @@ const DentalDashboard = () => {
               <div className="space-y-3">
                 {upcomingAppointments.map((appointment, index) => (
                   <div key={index} className="flex items-center p-3 bg-gray-50 rounded-lg">
-                    <img
-                      src={appointment.patient?.profile_picture}
-                      alt={appointment.patient?.name || "deleted patient" }
-                      className="w-8 h-8 rounded-full mr-3"
-                    />
+                    <div className="relative w-8 h-8 rounded-full overflow-hidden bg-blue-100 flex-shrink-0 mr-3">
+                      {appointment.patient?.profile_picture ? (
+                        <img
+                          src={`${process.env.NEXT_PUBLIC_BACKEND_URL}${appointment.patient.profile_picture}`}
+                          alt={appointment.patient?.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const fallback = target.nextElementSibling as HTMLElement;
+                            if (fallback) {
+                              fallback.style.display = 'flex';
+                            }
+                          }}
+                        />
+                      ) : null}
+                      <div className="absolute inset-0 flex items-center justify-center bg-blue-100 text-blue-700 font-medium text-xs">
+                        {appointment.patient?.name 
+                          ? appointment.patient.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
+                          : '?'}
+                      </div>
+                    </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-medium text-gray-900 text-sm truncate">
                         {appointment.patient?.name || "deleted patient"}

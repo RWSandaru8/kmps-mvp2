@@ -377,15 +377,30 @@ export function DoctorScheduleColumn({
       <CardHeader className="pb-2 sm:pb-3">
         {/* Doctor Header */}
         <div className="flex items-center gap-2 sm:gap-4 mb-3 sm:mb-4">
-          <Avatar className="h-10 w-10 sm:h-14 sm:w-14">
-            <AvatarImage src={dentist.profile_picture || "/placeholder.svg"} />
-            <AvatarFallback className="text-sm sm:text-lg">
-              {dentist.name
-                .split(" ")
-                .map((n) => n[0])
-                .join("")}
-            </AvatarFallback>
-          </Avatar>
+          <div className="relative">
+            <Avatar className="h-12 w-12 sm:h-16 sm:w-16 ">
+              <AvatarImage 
+                src={dentist.profile_picture ? `${process.env.NEXT_PUBLIC_BACKEND_URL}${dentist.profile_picture}` : "/placeholder.svg"} 
+                alt={dentist.name}
+                className="object-cover"
+                onError={(e) => {
+                  // Fallback to initials if image fails to load
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  const fallback = target.nextElementSibling as HTMLElement;
+                  if (fallback) {
+                    fallback.style.display = 'flex';
+                  }
+                }}
+              />
+              <AvatarFallback className="text-sm sm:text-lg bg-emerald-100 text-emerald-700 w-full h-full flex items-center justify-center">
+                {dentist.name
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")}
+              </AvatarFallback>
+            </Avatar>
+          </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <h3 className="font-semibold text-base sm:text-xl truncate">{dentist.name}</h3>
@@ -401,7 +416,7 @@ export function DoctorScheduleColumn({
               )}
             </div>
             <div className="flex items-center gap-2 sm:gap-3 text-sm sm:text-base text-gray-600 mt-1">
-              <span className="font-medium">${dentist.appointment_fee}</span>
+              <span className="font-medium">Rs: {dentist.appointment_fee}</span>
               <span>•</span>
               <span>{dentist.appointment_duration}min slots</span>
             </div>
