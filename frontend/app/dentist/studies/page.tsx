@@ -129,6 +129,7 @@ const MedicalStudyInterface: React.FC = () => {
   const [todayCount, setTodayCount] = useState<number>(0);
   const [radiologists, setRadiologists] = useState<Radiologist[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [patients, setPatients] = useState<Record<string, any>>({});
 
   // Get current user from auth context
   const { user, isLoggedIn, isLoadingAuth } = useContext(AuthContext);
@@ -174,6 +175,31 @@ const MedicalStudyInterface: React.FC = () => {
     fetchTodayCount();
   }, []);
 
+  // Function to fetch patient data
+  const fetchPatients = async (patientIds: string[]) => {
+    try {
+      const idsToFetch = patientIds.filter(id => !patients[id]);
+      if (idsToFetch.length === 0) return;
+
+      // Fetch patients individually
+      const fetchedPatients: Record<string, any> = {};
+      for (const id of idsToFetch) {
+        try {
+          const response = await fetch(`${backendUrl}/patients/${id}`);
+          if (response.ok) {
+            const patient = await response.json();
+            fetchedPatients[patient.patient_id || id] = patient;
+          }
+        } catch (error) {
+          console.error(`Error fetching patient ${id}:`, error);
+        }
+      }
+      setPatients(prev => ({ ...prev, ...fetchedPatients }));
+    } catch (err) {
+      console.error('Error in fetchPatients:', err);
+    }
+  };
+
   // Fetch studies assigned to the current dentist
   useEffect(() => {
     const fetchStudies = async () => {
@@ -195,6 +221,10 @@ const MedicalStudyInterface: React.FC = () => {
         const data = await response.json();
         const normalized = data.map((s: any) => normalizeStudy(s));
         setStudies(normalized);
+
+        // Extract unique patient IDs and fetch their details
+        const patientIds = Array.from(new Set(normalized.map((s: Study) => s.patient_id)));
+        fetchPatients(patientIds);
 
         // Update today's count
         const today = new Date().toISOString().split('T')[0];
@@ -939,7 +969,9 @@ const MedicalStudyInterface: React.FC = () => {
                           {study.patient_id}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">John Doe</td>
+                      <td className="px-4 py-3 text-sm text-gray-900">
+                        {study.patient?.name || patients[study.patient_id]?.name || 'Unknown Patient'}
+                      </td>
                       <td className="px-4 py-3 text-sm text-gray-900">{study.status}</td>
                       <td className="px-4 py-3 text-sm text-gray-900">ACC-{study.assertion_number}</td>
                       <td className="px-4 py-3 text-sm text-gray-900">{study.modality}</td>
@@ -973,7 +1005,16 @@ const MedicalStudyInterface: React.FC = () => {
                       <tr className="bg-gray-50 border-b">
                         <td colSpan={13} className="p-4">
                           <div className="bg-white p-4 rounded-md shadow-sm border border-gray-200">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                              {/* Study Details */}
+                              <div className="space-y-2">
+                                <h4 className="font-medium text-sm text-gray-700">Patient Information</h4>
+                                <div className="rounded-md bg-blue-50 p-3">
+                                  <p className="text-xs text-gray-600"><span className="font-medium">Name:</span> {study.patient?.name || patients[study.patient_id]?.name || 'Unknown Patient'}</p>
+                                  <p className="text-xs text-gray-600"><span className="font-medium">Patient ID:</span> {study.patient_id}</p>
+                                </div>
+                              </div>
+
                               {/* Study Details */}
                               <div className="space-y-2">
                                 <h4 className="font-medium text-sm text-gray-700">Study Details</h4>

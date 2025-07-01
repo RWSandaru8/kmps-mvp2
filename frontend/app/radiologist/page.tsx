@@ -137,6 +137,7 @@ const MedicalStudyInterface: React.FC = () => {
   const [reportedTodayCount, setReportedTodayCount] = useState<number>(0);
   const [radiologists, setRadiologists] = useState<Radiologist[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [patients, setPatients] = useState<Record<string, any>>({});
   const router = useRouter();
 
   // Helper to convert API study payload into UI-friendly shape
@@ -204,6 +205,31 @@ const MedicalStudyInterface: React.FC = () => {
     setRadiologistID(user.id)
   },[isLoadingAuth]);
 
+  // Function to fetch patient data
+  const fetchPatients = async (patientIds: string[]) => {
+    try {
+      const idsToFetch = patientIds.filter(id => !patients[id]);
+      if (idsToFetch.length === 0) return;
+
+      // Fetch patients individually
+      const fetchedPatients: Record<string, any> = {};
+      for (const id of idsToFetch) {
+        try {
+          const response = await fetch(`${backendURL}/patients/${id}`);
+          if (response.ok) {
+            const patient = await response.json();
+            fetchedPatients[patient.patient_id || id] = patient;
+          }
+        } catch (error) {
+          console.error(`Error fetching patient ${id}:`, error);
+        }
+      }
+      setPatients(prev => ({ ...prev, ...fetchedPatients }));
+    } catch (err) {
+      console.error('Error in fetchPatients:', err);
+    }
+  };
+
   // Fetch studies from the backend
   useEffect(() => {
     const fetchStudies = async () => {
@@ -219,7 +245,10 @@ const MedicalStudyInterface: React.FC = () => {
         // Keep only studies assigned to the radiologist in the URL
         const filtered = radiologistID ? normalized.filter((s: Study) => s.radiologist_id?.toString() === radiologistID) : normalized;
         setStudies(filtered);
-        console.log(normalized);
+        
+        // Extract unique patient IDs and fetch their details
+        const patientIds = Array.from(new Set(normalized.map((s: Study) => s.patient_id)));
+        fetchPatients(patientIds);
       } catch (err) {
         console.error('Failed to fetch studies:', err);
         setError('Failed to load studies. Please try again later.');
@@ -752,7 +781,9 @@ const MedicalStudyInterface: React.FC = () => {
                           {study.patient_id}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">John Doe</td>
+                      <td className="px-4 py-3 text-sm text-gray-900">
+                        {study.patient?.name || patients[study.patient_id]?.name || 'Unknown Patient'}
+                      </td>
                       <td className="px-4 py-3 text-sm text-gray-900">{study.status}</td>
                       <td className="px-4 py-3 text-sm text-gray-900">ACC-{study.assertion_number}</td>
                       <td className="px-4 py-3 text-sm text-gray-900">{study.modality}</td>
@@ -869,7 +900,9 @@ const MedicalStudyInterface: React.FC = () => {
             {displayedStudies.map((study) => (
               <div key={study.study_id} className="p-4">
                 <div className="flex justify-between items-start mb-2">
-                  <div className="font-medium text-gray-900">{study.patient_id} - John Doe</div>
+                  <div className="font-medium text-gray-900">
+                    {study.patient_id} - {study.patient?.name || patients[study.patient_id]?.name || 'Unknown Patient'}
+                  </div>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleEditStudy(study.study_id)}
