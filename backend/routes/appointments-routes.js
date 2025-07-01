@@ -303,6 +303,9 @@ router.get('/count/today-checked-in', /* authenticateToken, */ async (req, res) 
           lte: endOfDay
         },
         status: "checkedin",
+        NOT: {
+          status: 'cancelled'
+        },
         patient_id: { not: null },
         dentist_id: { not: null }
       }
@@ -328,6 +331,9 @@ router.get('/count/today-not-checked-in', /* authenticateToken, */ async (req, r
           lte: endOfDay
         },
         status: { in: ["confirmed", "pending"] },
+        NOT: {
+          status: 'cancelled'
+        },
         patient_id: { not: null },
         dentist_id: { not: null }
       }

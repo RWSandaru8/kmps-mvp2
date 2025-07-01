@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useContext } from 'react';
 import { Calendar, Clock, Users, CheckCircle, XCircle, AlertCircle, Plus, ChevronLeft, ChevronRight, Eye, Check, X } from 'lucide-react';
+import { CancelAppointmentDialog } from '@/components/cancel-appointment-dialog';
 import axios from 'axios';
 import { AuthContext } from '@/context/auth-context';
 import { toast } from 'sonner';
@@ -44,6 +45,8 @@ const DentalDashboard = () => {
   const [loadingTodaysAppointments, setLoadingTodaysAppointments] = useState(false);
   const [loadingUpcomingAppointments, setLoadingUpcomingAppointments] = useState(false);
   const [changingStatus, setChangingStatus] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [todaysAppointments, setTodaysAppointments] = useState <Appointment[]>([]);
   const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([]);
   const [status, setStatus] = useState("");
@@ -185,21 +188,95 @@ const DentalDashboard = () => {
   };
 
   // Handle status change
-  const handleStatusChange = (appointmentId: number, newStatus: string) => {
-    setStatus(newStatus);
-    setAppointment_id(appointmentId);
-    setTodaysAppointments(prevAppointments =>
-      prevAppointments.map(appointment =>
-        appointment.appointment_id === appointmentId
-          ? { ...appointment, status: newStatus }
-          : appointment
-      )
-    );
+  const handleStatusChange = async (appointmentId: number, newStatus: string, note: string = '') => {
+    try {
+      setStatus(newStatus);
+      setAppointment_id(appointmentId);
+      
+      // Update local state optimistically
+      setTodaysAppointments(prevAppointments =>
+        prevAppointments.map(appointment =>
+          appointment.appointment_id === appointmentId
+            ? { ...appointment, status: newStatus }
+            : appointment
+        )
+      );
+
+      // If cancelling, send the note to the server
+      if (newStatus === 'cancelled') {
+        await axios.put(
+          `${backendURL}/appointments/${appointmentId}`,
+          {
+            status: newStatus,
+            note: note
+          },
+          {
+            withCredentials: true,
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+      }
+    } catch (error) {
+      console.error('Error updating appointment status:', error);
+      toast.error('Failed to update appointment status');
+      // Revert local state on error
+      setTodaysAppointments(prevAppointments =>
+        prevAppointments.map(appointment =>
+          appointment.appointment_id === appointmentId
+            ? { ...appointment, status: appointment.status } // Revert to previous status
+            : appointment
+        )
+      );
+    }
   };
 
-  const todaysAppointmentsCount = todaysAppointments.length;
-  const totalCheckIns = todaysAppointments.filter(apt => apt.status === 'checked-in').length;
-  const completedAppointments = todaysAppointments.filter(apt => apt.status === 'Complete').length;
+  const handleCancelClick = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setCancelDialogOpen(true);
+  };
+
+  const handleConfirmCancel = async (note: string) => {
+    if (selectedAppointment) {
+      try {
+        await axios.put(
+          `${backendURL}/appointments/${selectedAppointment.appointment_id}`,
+          {
+            status: 'cancelled',
+            cancel_note: note
+          },
+          {
+            withCredentials: true,
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+        
+        // Update local state
+        setTodaysAppointments(prevAppointments =>
+          prevAppointments.map(appointment =>
+            appointment.appointment_id === selectedAppointment.appointment_id
+              ? { ...appointment, status: 'cancelled', note: note }
+              : appointment
+          )
+        );
+        
+        toast.success('Appointment cancelled successfully');
+      } catch (error) {
+        console.error('Error cancelling appointment:', error);
+        toast.error('Failed to cancel appointment');
+      } finally {
+        setCancelDialogOpen(false);
+        setSelectedAppointment(null);
+      }
+    }
+  };
+
+  const todaysAppointmentsCount = todaysAppointments.filter(apt => apt.status !== 'cancelled').length;
+  const totalCheckIns = todaysAppointments.filter(apt => apt.status === 'checkedin').length;
+  const completedAppointments = todaysAppointments.filter(apt => apt.status === 'complete').length;
 
   const monthNames = ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"];
@@ -305,7 +382,7 @@ const DentalDashboard = () => {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleStatusChange(appointment.appointment_id, 'Completed');
+                              handleStatusChange(appointment.appointment_id, 'completed');
                             }}
                             className="p-1.5 rounded-full bg-green-100 text-green-700 hover:bg-green-200 transition-colors"
                             title="Mark as Completed"
@@ -315,10 +392,10 @@ const DentalDashboard = () => {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleStatusChange(appointment.appointment_id, 'cancelled');
+                              handleCancelClick(appointment);
                             }}
                             className="p-1.5 rounded-full bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
-                            title="Mark as cancelled"
+                            title="Cancel appointment"
                           >
                             <X className="w-3.5 h-3.5" />
                           </button>
@@ -448,6 +525,14 @@ const DentalDashboard = () => {
           </div>
         </div>
       </div>
+      
+      {/* Cancel Appointment Dialog */}
+      <CancelAppointmentDialog
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
+        onCancel={handleConfirmCancel}
+        selectedCount={selectedAppointment ? 1 : 0}
+      />
     </div>
   );
 };
