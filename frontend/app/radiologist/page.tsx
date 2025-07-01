@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useContext } from 'react';
-import { Calendar, Clock, Plus, Search, MoreHorizontal, CheckCircle, X, Upload, FileText, Edit, Trash2, UserPlus, User, Users, Check, FileUp, ChevronDown, ChevronRight, Eye, File } from 'lucide-react';
+import { Calendar, Clock, Plus, Search, MoreHorizontal, CheckCircle, X, Upload, FileText, Edit, Trash2, UserPlus, User, Users, Check, FileUp, ChevronDown, ChevronRight, Eye, File, ScanLine } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { AuthContext } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
@@ -111,6 +111,47 @@ const MedicalStudyInterface: React.FC = () => {
     window.open(url, '_blank');
 
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  // Helper to open or download report files based on file type
+  const openReportFile = async (reportId: number) => {
+    try {
+      // First fetch the report data to get the file URL and determine file type
+      const reportResponse = await fetch(`${backendURL}/reports/${reportId}`);
+      if (!reportResponse.ok) {
+        throw new Error(`Failed to fetch report: ${reportResponse.status}`);
+      }
+      
+      const reportData = await reportResponse.json();
+      const fileUrl = reportData.report_file_url;
+      
+      if (!fileUrl) {
+        toast.error('Report file URL is missing');
+        return;
+      }
+      
+      // Check file type based on extension
+      const fileExtension = fileUrl.split('.').pop()?.toLowerCase();
+      
+      if (fileExtension === 'pdf') {
+        // For PDF files, open in a new tab
+        window.open(`${backendURL}${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`, '_blank');
+      } else {
+        // For Word documents and other files, trigger download
+        const fullUrl = `${backendURL}${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
+        
+        // Create a temporary anchor element to trigger download
+        const link = document.createElement('a');
+        link.href = fullUrl;
+        link.setAttribute('download', ''); // This will force download instead of navigation
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    } catch (error) {
+      console.error('Error opening report file:', error);
+      toast.error('Failed to open report file');
+    }
   };
 
   const [newStudy, setNewStudy] = useState<NewStudyForm>({
@@ -869,16 +910,16 @@ const MedicalStudyInterface: React.FC = () => {
                                       }}
                                       className="flex items-center justify-center gap-2 py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded transition-colors"
                                     >
-                                      <Eye className="w-3 h-3" /> View DICOM
+                                      <ScanLine className="w-3 h-3" /> View DICOM
                                     </button>
                                   )}
                     
                                   {study.report_id && (
                                     <button
                                       onClick={() => {
-                                        window.open(`${backendURL}/reports/${study.report_id}`, '_blank');
-                                    }}
-                                    className="flex items-center justify-center gap-2 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded transition-colors">
+                                        openReportFile(study.report_id!);
+                                      }}
+                                      className="flex items-center justify-center gap-2 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded transition-colors">
                                       <File className="w-3 h-3" /> Open Report
                                     </button>
                                   )}
@@ -944,15 +985,15 @@ const MedicalStudyInterface: React.FC = () => {
                         }}
                         className="flex items-center justify-center gap-2 py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded transition-colors"
                       >
-                        <Eye className="w-3 h-3" /> View DICOM
+                        <ScanLine className="w-3 h-3" /> View DICOM
                       </button>
                     )}
       
                     {study.report_id && (
                       <button
                         onClick={() => {
-                          window.open(`${backendURL}/reports/${study.report_id}`, '_blank');
-                      }}
+                          openReportFile(study.report_id!);
+                        }}
                       className="flex items-center justify-center gap-2 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded transition-colors">
                         <File className="w-3 h-3" /> Open Report
                       </button>
