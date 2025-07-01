@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '@/context/auth-context';
-import { Calendar, Clock, Plus, Search, MoreHorizontal, X, Upload, FileText, Edit, Trash2, UserPlus, User, Users, ChevronDown, ChevronRight, Eye, File } from 'lucide-react';
+import { Calendar, Clock, Plus, Search, ScanLine, MoreHorizontal, X, Upload, FileText, Edit, Trash2, UserPlus, User, Users, ChevronDown, ChevronRight, Eye, File } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Types based on the database structure
@@ -979,7 +979,7 @@ const MedicalStudyInterface: React.FC = () => {
                             className="p-1 text-indigo-600 hover:bg-indigo-50 rounded"
                             title="View DICOM"
                           >
-                            <Eye className="w-4 h-4" />
+                            <ScanLine className="w-4 h-4" />
                           </button>
                           {study.report_id && (
                             <button
@@ -1053,7 +1053,7 @@ const MedicalStudyInterface: React.FC = () => {
                                         }}
                                         className="flex items-center justify-center gap-2 py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded transition-colors"
                                       >
-                                        <Eye className="w-3 h-3" /> View Medical Images
+                                        <ScanLine className="w-3 h-3" /> View Medical Images
                                       </button>
                                     )}
 
@@ -1092,7 +1092,7 @@ const MedicalStudyInterface: React.FC = () => {
                       className="p-1 text-indigo-600 hover:bg-indigo-50 rounded"
                       title="View DICOM"
                     >
-                      <Eye className="w-4 h-4" />
+                      <ScanLine className="w-4 h-4" />
                     </button>
                     {study.report_id && (
                       <button
