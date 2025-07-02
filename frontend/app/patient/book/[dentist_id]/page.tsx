@@ -370,6 +370,8 @@ export default function DentistBookingPage() {
           description: "Your appointment has been booked successfully!"
         });
         setNote('');
+        setSelectedTime(null);
+        setSelectedDate(new Date());
         fetchCurrentAppointments();
       } else {
         throw new Error(response.data.error || "Failed to book appointment");
